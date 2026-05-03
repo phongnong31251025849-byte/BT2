@@ -1,0 +1,57 @@
+import numpy as np
+import skfuzzy as fuzz
+from skfuzzy import control as ctrl
+
+nhu_cau_sp = ctrl.Antecedent(np.arange(0, 101, 1), 'nhu_cau_sp')
+ap_luc_dinh_gia = ctrl.Antecedent(np.arange(0, 101, 1), 'ap_luc_dinh_gia')
+uy_tin = ctrl.Antecedent(np.arange(1.0, 5.1, 0.1), 'uy_tin')
+bien_loi_nhuan = ctrl.Antecedent(np.arange(0, 101, 1), 'bien_loi_nhuan')
+nhu_cau_mua = ctrl.Antecedent(np.arange(0, 11, 1), 'nhu_cau_mua')
+
+chiet_khau = ctrl.Consequent(np.arange(0, 71, 1), 'chiet_khau')
+
+nhu_cau_sp['thap'] = fuzz.trimf(nhu_cau_sp.universe, [0, 0, 40])
+nhu_cau_sp['trung_binh'] = fuzz.trimf(nhu_cau_sp.universe, [30, 50, 70])
+nhu_cau_sp['cao'] = fuzz.trimf(nhu_cau_sp.universe, [60, 100, 100])
+
+ap_luc_dinh_gia['thap'] = fuzz.trimf(ap_luc_dinh_gia.universe, [0, 0, 40])
+ap_luc_dinh_gia['trung_binh'] = fuzz.trimf(ap_luc_dinh_gia.universe, [30, 50, 70])
+ap_luc_dinh_gia['cao'] = fuzz.trimf(ap_luc_dinh_gia.universe, [60, 100, 100])
+
+uy_tin['thap'] = fuzz.trimf(uy_tin.universe, [1.0, 1.0, 4.0])
+uy_tin['trung_binh'] = fuzz.trimf(uy_tin.universe, [4.0, 4.25, 4.5])
+uy_tin['cao'] = fuzz.trimf(uy_tin.universe, [4.5, 5.0, 5.0])
+
+bien_loi_nhuan['thap'] = fuzz.trimf(bien_loi_nhuan.universe, [0, 0, 40])
+bien_loi_nhuan['trung_binh'] = fuzz.trimf(bien_loi_nhuan.universe, [30, 50, 70])
+bien_loi_nhuan['cao'] = fuzz.trimf(bien_loi_nhuan.universe, [60, 100, 100])
+
+nhu_cau_mua['khong_co'] = fuzz.trimf(nhu_cau_mua.universe, [0, 0, 4])
+nhu_cau_mua['trung_binh'] = fuzz.trimf(nhu_cau_mua.universe, [3, 5, 7])
+nhu_cau_mua['cao'] = fuzz.trimf(nhu_cau_mua.universe, [6, 10, 10])
+
+chiet_khau['rat_thap'] = fuzz.trimf(chiet_khau.universe, [0, 0, 5])
+chiet_khau['thap'] = fuzz.trimf(chiet_khau.universe, [5, 7.5, 10])
+chiet_khau['trung_binh'] = fuzz.trimf(chiet_khau.universe, [10, 15, 20])
+chiet_khau['cao'] = fuzz.trimf(chiet_khau.universe, [20, 30, 40])
+chiet_khau['rat_cao'] = fuzz.trimf(chiet_khau.universe, [40, 55, 70])
+
+rule1 = ctrl.Rule(nhu_cau_sp['cao'] & ap_luc_dinh_gia['thap'] & bien_loi_nhuan['thap'], chiet_khau['rat_thap'])
+rule2 = ctrl.Rule(nhu_cau_sp['thap'] & ap_luc_dinh_gia['cao'] & bien_loi_nhuan['cao'], chiet_khau['cao'])
+rule3 = ctrl.Rule(uy_tin['cao'] & bien_loi_nhuan['trung_binh'] & nhu_cau_mua['cao'], chiet_khau['trung_binh'])
+rule4 = ctrl.Rule(ap_luc_dinh_gia['cao'] & nhu_cau_mua['cao'] & bien_loi_nhuan['cao'], chiet_khau['rat_cao'])
+rule5 = ctrl.Rule(uy_tin['thap'] & nhu_cau_sp['trung_binh'] & bien_loi_nhuan['thap'], chiet_khau['trung_binh'])
+rule6 = ctrl.Rule(nhu_cau_sp['cao'] & nhu_cau_mua['khong_co'] & ap_luc_dinh_gia['thap'], chiet_khau['rat_thap'])
+rule7 = ctrl.Rule(bien_loi_nhuan['cao'] & ap_luc_dinh_gia['trung_binh'] & nhu_cau_mua['trung_binh'], chiet_khau['trung_binh'])
+
+he_thong_ctrl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, rule7])
+he_thong = ctrl.ControlSystemSimulation(he_thong_ctrl)
+he_thong.input['nhu_cau_sp'] = 85
+he_thong.input['ap_luc_dinh_gia'] = 50
+he_thong.input['uy_tin'] = 4.2
+he_thong.input['bien_loi_nhuan'] = 80
+he_thong.input['nhu_cau_mua'] = 5 
+
+he_thong.compute()
+
+print(f"Mức chiết khấu đề xuất tính toán được: {he_thong.output['chiet_khau']:.2f}%")
