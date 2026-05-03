@@ -1,0 +1,49 @@
+import numpy as np
+import skfuzzy as fuzz
+from skfuzzy import control as ctrl
+
+mat_do = ctrl.Antecedent(np.arange(0, 101, 1), 'mat_do')
+khan_cap = ctrl.Antecedent(np.arange(0, 101, 1), 'khan_cap')
+tai_trong = ctrl.Antecedent(np.arange(0, 101, 1), 'tai_trong')
+giao_thong = ctrl.Antecedent(np.arange(0, 101, 1), 'giao_thong')
+loi_nhuan = ctrl.Antecedent(np.arange(0, 101, 1), 'loi_nhuan')
+
+so_luong_don = ctrl.Consequent(np.arange(0, 101, 1), 'so_luong_don')
+uu_tien = ctrl.Consequent(np.arange(0, 101, 1), 'uu_tien')
+
+for var in [mat_do, khan_cap, tai_trong, giao_thong, loi_nhuan]:
+    var['thap'] = fuzz.trimf(var.universe, [0, 0, 40])
+    var['trung_binh'] = fuzz.trimf(var.universe, [30, 50, 70])
+    var['cao'] = fuzz.trimf(var.universe, [60, 100, 100])
+
+so_luong_don['it'] = fuzz.trimf(so_luong_don.universe, [0, 0, 40])
+so_luong_don['mot_so'] = fuzz.trimf(so_luong_don.universe, [30, 50, 70])
+so_luong_don['nhieu'] = fuzz.trimf(so_luong_don.universe, [60, 100, 100])
+
+uu_tien['thap'] = fuzz.trimf(uu_tien.universe, [0, 0, 40])
+uu_tien['trung_binh'] = fuzz.trimf(uu_tien.universe, [30, 50, 70])
+uu_tien['cao'] = fuzz.trimf(uu_tien.universe, [60, 100, 100])
+
+rule1 = ctrl.Rule(mat_do['cao'] & tai_trong['thap'] & giao_thong['thap'], so_luong_don['nhieu'])
+rule2 = ctrl.Rule(mat_do['trung_binh'] & giao_thong['cao'] & khan_cap['trung_binh'], so_luong_don['mot_so'])
+rule3 = ctrl.Rule(tai_trong['cao'] & mat_do['cao'] & loi_nhuan['trung_binh'], so_luong_don['mot_so'])
+rule4 = ctrl.Rule(mat_do['thap'] & khan_cap['cao'] & giao_thong['trung_binh'], so_luong_don['mot_so'])
+rule5 = ctrl.Rule(loi_nhuan['cao'] & khan_cap['cao'] & giao_thong['cao'], so_luong_don['mot_so'])
+rule6 = ctrl.Rule(khan_cap['cao'] & loi_nhuan['cao'], uu_tien['cao'])
+rule7 = ctrl.Rule(khan_cap['trung_binh'] & giao_thong['trung_binh'], uu_tien['trung_binh'])
+rule8 = ctrl.Rule(khan_cap['thap'] & mat_do['cao'] & loi_nhuan['thap'], uu_tien['thap'])
+
+he_thong_ctrl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8])
+he_thong = ctrl.ControlSystemSimulation(he_thong_ctrl)
+
+he_thong.input['mat_do'] = 80       
+he_thong.input['khan_cap'] = 50 
+he_thong.input['tai_trong'] = 20   
+he_thong.input['giao_thong'] = 35   
+he_thong.input['loi_nhuan'] = 50    
+
+he_thong.compute()
+
+print("--kết quả--")
+print(f"số lượng đơn cần kết hợp: {he_thong.output['so_luong_don']:.2f}/100")
+print(f"mức độ ưu tiên giao: {he_thong.output['uu_tien']:.2f}/100")
